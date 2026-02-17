@@ -1,0 +1,82 @@
+version: "3.8"
+
+# ============================================
+# Ghost Host — Docker Compose (MVP)
+# ============================================
+# Usage:
+#   1. Copy .env.example to .env and fill in values
+#   2. docker-compose build
+#   3. docker-compose up -d
+# ============================================
+
+services:
+
+  # ── PostgreSQL Database ──────────────────────
+  postgres:
+    image: postgres:16-alpine
+    container_name: ghosthost-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  # ── Spring Boot API + Worker ─────────────────
+  api:
+    build:
+      context: ./api
+      dockerfile: Dockerfile
+    container_name: ghosthost-api
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
+      JWT_SECRET: ${JWT_SECRET}
+      R2_ACCESS_KEY: ${R2_ACCESS_KEY}
+      R2_SECRET_KEY: ${R2_SECRET_KEY}
+      R2_ENDPOINT: ${R2_ENDPOINT}
+      R2_BUCKET: ${R2_BUCKET}
+      R2_PUBLIC_URL: ${R2_PUBLIC_URL}
+      BASE_DOMAIN: ${BASE_DOMAIN}
+      DOCKER_MEMORY_LIMIT: ${DOCKER_MEMORY_LIMIT}
+      DOCKER_CPU_LIMIT: ${DOCKER_CPU_LIMIT}
+      BUILD_TIMEOUT_SECONDS: ${BUILD_TIMEOUT_SECONDS}
+    volumes:
+      # Mount Docker socket so the worker can create build containers
+      - /var/run/docker.sock:/var/run/docker.sock
+      # Temp directory for extracted build artifacts
+      - /tmp/ghosthost-builds:/tmp/ghosthost-builds
+
+  # ── Nginx Reverse Proxy ─────────────────────
+  nginx:
+    build:
+      context: ./nginx
+      dockerfile: Dockerfile
+    container_name: ghosthost-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      R2_PUBLIC_URL: ${R2_PUBLIC_URL}
+      BASE_DOMAIN: ${BASE_DOMAIN}
+    depends_on:
+      - api
+
+volumes:
+  pgdata:

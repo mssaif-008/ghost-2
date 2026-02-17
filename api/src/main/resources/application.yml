@@ -1,0 +1,56 @@
+# ============================================
+# Ghost Host — Application Configuration
+# ============================================
+
+spring:
+  application:
+    name: ghosthost-api
+
+  # ── Database ───────────────────────────────
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/ghosthost}
+    username: ${SPRING_DATASOURCE_USERNAME:ghosthost}
+    password: ${SPRING_DATASOURCE_PASSWORD:changeme}
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: none        # We use schema.sql instead
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
+  # ── Run schema.sql on startup ──────────────
+  sql:
+    init:
+      mode: always
+      schema-locations: classpath:schema.sql
+
+# ── Server ─────────────────────────────────
+server:
+  port: 8080
+
+# ── JWT ────────────────────────────────────
+jwt:
+  secret: ${JWT_SECRET:default-dev-secret-change-in-production}
+  expiration-ms: 86400000   # 24 hours
+
+# ── Cloudflare R2 ─────────────────────────
+r2:
+  access-key: ${R2_ACCESS_KEY:}
+  secret-key: ${R2_SECRET_KEY:}
+  endpoint: ${R2_ENDPOINT:}
+  bucket: ${R2_BUCKET:ghosthost-deployments}
+  public-url: ${R2_PUBLIC_URL:}
+
+# ── Domain ─────────────────────────────────
+app:
+  base-domain: ${BASE_DOMAIN:localhost}
+
+# ── Docker Build Config ───────────────────
+docker:
+  memory-limit: ${DOCKER_MEMORY_LIMIT:512m}
+  cpu-limit: ${DOCKER_CPU_LIMIT:1}
+  build-timeout-seconds: ${BUILD_TIMEOUT_SECONDS:300}
+  builder-image: ghosthost-builder
