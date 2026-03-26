@@ -14,7 +14,7 @@ map $uri $uri_stripped {
 # ── API Server ──
 server {
     listen 80;
-    server_name localhost api.*;
+    server_name api.* localhost;
 
     location / {
         proxy_pass         http://api:8081;
