@@ -1,17 +1,10 @@
-# ============================================
-# Ghost Host — Nginx Configuration (Final)
-# ============================================
-
-# ── Resolver ──
 resolver 127.0.0.11 8.8.8.8 valid=30s;
 
-# Map to strip the first path segment if it exists (e.g. /prefix/file.js -> /file.js)
 map $uri $uri_stripped {
     "~^/[^/]+(/.*)$" $1;
     default $uri;
 }
 
-# ── API Server ──
 server {
     listen 80;
     server_name api.* localhost;
@@ -23,7 +16,6 @@ server {
     }
 }
 
-# ── Static Site Serving ──
 server {
     listen 80 default_server;
     server_name ~^(?<deployment_id>[a-zA-Z0-9-]+)\.(.+)$;
@@ -31,45 +23,62 @@ server {
     set $sb_url "${SUPABASE_URL}";
     set $sb_bucket "${SUPABASE_BUCKET}";
     set $sb_key "${SUPABASE_SERVICE_KEY}";
-    
-    set $sb_host "";
-    if ($sb_url ~* ^https?://([^/]+)) {
-        set $sb_host $1;
-    }
+    set $sb_host "xqqdvcgghvjsjhbewzjr.supabase.co";
 
-    # Primary entry point
-    location / {
-        proxy_pass $sb_url/storage/v1/object/$sb_bucket/deployments/$deployment_id$request_uri;
-        
+    # Root — serve index.html
+    location = / {
+        proxy_pass $sb_url/storage/v1/object/$sb_bucket/deployments/$deployment_id/index.html;
+
         proxy_set_header Host $sb_host;
         proxy_set_header Authorization "Bearer $sb_key";
         proxy_ssl_server_name on;
         proxy_ssl_name $sb_host;
-        
-        proxy_intercept_errors on;
-        error_page 400 404 403 = @try_stripped;
-    }
 
-    # Fallback to try stripping the prefix (for assets with prefix)
-    location @try_stripped {
-        proxy_pass $sb_url/storage/v1/object/$sb_bucket/deployments/$deployment_id$uri_stripped;
-        
-        proxy_set_header Host $sb_host;
-        proxy_set_header Authorization "Bearer $sb_key";
-        proxy_ssl_server_name on;
-        proxy_ssl_name $sb_host;
-        
+        proxy_hide_header Content-Type;
+        proxy_hide_header Content-Security-Policy;
+        proxy_hide_header X-Content-Type-Options;
+        proxy_hide_header Content-Disposition;
+        proxy_hide_header Cache-Control;
+
+        add_header Content-Type "text/html; charset=utf-8" always;
+        add_header Cache-Control "no-cache, no-store, must-revalidate" always;
+
         proxy_intercept_errors on;
         error_page 400 404 403 = @fallback;
     }
 
-    # Final SPA Fallback
-    location @fallback {
-        proxy_pass $sb_url/storage/v1/object/$sb_bucket/deployments/$deployment_id/index.html;
-        
+    # Assets and all other paths
+    location / {
+        proxy_pass $sb_url/storage/v1/object/$sb_bucket/deployments/$deployment_id$request_uri;
+
         proxy_set_header Host $sb_host;
         proxy_set_header Authorization "Bearer $sb_key";
         proxy_ssl_server_name on;
         proxy_ssl_name $sb_host;
+
+        proxy_hide_header Content-Security-Policy;
+        proxy_hide_header X-Content-Type-Options;
+
+        proxy_intercept_errors on;
+        error_page 400 404 403 = @fallback;
+    }
+
+    # SPA fallback
+    location @fallback {
+        proxy_pass $sb_url/storage/v1/object/$sb_bucket/deployments/$deployment_id/index.html;
+
+        proxy_set_header Host $sb_host;
+        proxy_set_header Authorization "Bearer $sb_key";
+        proxy_ssl_server_name on;
+        proxy_ssl_name $sb_host;
+
+        proxy_hide_header Content-Type;
+        proxy_hide_header Content-Security-Policy;
+        proxy_hide_header X-Content-Type-Options;
+        proxy_hide_header Content-Disposition;
+        proxy_hide_header Cache-Control;
+
+        add_header Content-Type "text/html; charset=utf-8" always;
+        add_header Cache-Control "no-cache, no-store, must-revalidate" always;
     }
 }
