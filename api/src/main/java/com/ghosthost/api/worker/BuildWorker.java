@@ -5,7 +5,7 @@ import com.ghosthost.api.entity.Deployment;
 import com.ghosthost.api.repository.BuildJobRepository;
 import com.ghosthost.api.repository.DeploymentRepository;
 import com.ghosthost.api.service.QueueService;
-import com.ghosthost.api.service.R2StorageService;
+import com.ghosthost.api.service.SupabaseStorageService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -23,7 +23,7 @@ import java.time.LocalDateTime;
  * b. Update status to BUILDING
  * c. Run Docker build (clone → install → build → extract)
  * d. Update status to UPLOADING
- * e. Upload build output to R2
+ * e. Upload build output to Supabase Storage
  * f. Update status to LIVE
  * g. Clean up temp files and container
  * 3. If any step fails, we set status to FAILED and log the error
@@ -48,18 +48,18 @@ public class BuildWorker {
     private final DeploymentRepository deploymentRepository;
     private final BuildJobRepository buildJobRepository;
     private final DockerBuildExecutor dockerBuildExecutor;
-    private final R2StorageService r2StorageService;
+    private final SupabaseStorageService supabaseStorageService;
 
     public BuildWorker(QueueService queueService,
             DeploymentRepository deploymentRepository,
             BuildJobRepository buildJobRepository,
             DockerBuildExecutor dockerBuildExecutor,
-            R2StorageService r2StorageService) {
+            SupabaseStorageService supabaseStorageService) {
         this.queueService = queueService;
         this.deploymentRepository = deploymentRepository;
         this.buildJobRepository = buildJobRepository;
         this.dockerBuildExecutor = dockerBuildExecutor;
-        this.r2StorageService = r2StorageService;
+        this.supabaseStorageService = supabaseStorageService;
     }
 
     /**
@@ -131,13 +131,13 @@ public class BuildWorker {
         deployment.setStatus("UPLOADING");
         deploymentRepository.save(deployment);
 
-        BuildJob uploadLog = logStep(deploymentId, "UPLOAD", "RUNNING", "Uploading to R2...");
+        BuildJob uploadLog = logStep(deploymentId, "UPLOAD", "RUNNING", "Uploading to Supabase...");
 
         try {
-            int fileCount = r2StorageService.uploadDirectory(
+            int fileCount = supabaseStorageService.uploadDirectory(
                     result.outputPath(), deploymentId);
 
-            uploadLog.setLogOutput("Uploaded " + fileCount + " files to R2");
+            uploadLog.setLogOutput("Uploaded " + fileCount + " files to Supabase");
             uploadLog.setStatus("SUCCESS");
             uploadLog.setFinishedAt(LocalDateTime.now());
             buildJobRepository.save(uploadLog);

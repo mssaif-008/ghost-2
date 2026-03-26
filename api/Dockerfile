@@ -12,7 +12,7 @@
 # ============================================
 
 # ── Stage 1: Build ──────────────────────────
-FROM maven:3.9-eclipse-temurin-21-alpine AS build
+FROM maven:3.9-eclipse-temurin-17-alpine AS build
 
 WORKDIR /app
 
@@ -26,7 +26,7 @@ COPY src ./src
 RUN mvn package -DskipTests -B
 
 # ── Stage 2: Runtime ────────────────────────
-FROM eclipse-temurin:21-jre-alpine
+FROM eclipse-temurin:17-jre-alpine
 
 WORKDIR /app
 
@@ -40,11 +40,13 @@ COPY --from=build /app/target/*.jar app.jar
 # Create temp directory for build artifacts
 RUN mkdir -p /tmp/ghosthost-builds
 
-# Run as non-root user
-RUN adduser -D ghosthost
-USER ghosthost
+# NOTE: Running as root for MVP because:
+# 1. The bind mount (/tmp/ghosthost-builds) inherits host permissions
+# 2. Docker socket access requires elevated privileges
+# 3. The container itself provides isolation
+# In production, use a proper init system to fix permissions at runtime
 
-EXPOSE 8080
+EXPOSE 8081
 
 # JVM settings for container environment
 ENTRYPOINT ["java", \

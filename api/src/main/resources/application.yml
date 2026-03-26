@@ -29,20 +29,18 @@ spring:
 
 # ── Server ─────────────────────────────────
 server:
-  port: 8080
+  port: 8081
 
 # ── JWT ────────────────────────────────────
 jwt:
   secret: ${JWT_SECRET:default-dev-secret-change-in-production}
   expiration-ms: 86400000   # 24 hours
 
-# ── Cloudflare R2 ─────────────────────────
-r2:
-  access-key: ${R2_ACCESS_KEY:}
-  secret-key: ${R2_SECRET_KEY:}
-  endpoint: ${R2_ENDPOINT:}
-  bucket: ${R2_BUCKET:ghosthost-deployments}
-  public-url: ${R2_PUBLIC_URL:}
+# ── Supabase Storage ──────────────────────
+supabase:
+  url: ${SUPABASE_URL:}
+  service-key: ${SUPABASE_SERVICE_KEY:}
+  bucket: ${SUPABASE_BUCKET:ghosthost-deployments}
 
 # ── Domain ─────────────────────────────────
 app:

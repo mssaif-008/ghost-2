@@ -197,12 +197,15 @@ public class DockerBuildExecutor {
             // Create host output dir
             Files.createDirectories(hostOutputDir);
 
-            // Build script
+            // Build script with standard framework compatibility env vars
             String buildScript = String.join(" && ",
                     "echo '=== CLONE ==='",
                     "git clone --depth 1 " + repoUrl + " /workspace/repo 2>&1",
                     "echo '=== BUILD ==='",
                     "cd /workspace/repo",
+                    "export PUBLIC_URL=/",
+                    "export BASE_URL=/",
+                    "export GENERATE_SOURCEMAP=false",
                     buildCommand + " 2>&1",
                     "echo '=== EXTRACT ==='",
                     "cp -r " + outputDir + "/* /output/ 2>&1",

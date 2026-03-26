@@ -20,7 +20,7 @@
     <description>Mini Managed Static Deployment Platform</description>
 
     <properties>
-        <java.version>21</java.version>
+        <java.version>17</java.version>
         <jjwt.version>0.12.5</jjwt.version>
     </properties>
 
@@ -73,12 +73,7 @@
             <scope>runtime</scope>
         </dependency>
 
-        <!-- ── AWS SDK for S3 (R2 is S3-compatible) ── -->
-        <dependency>
-            <groupId>software.amazon.awssdk</groupId>
-            <artifactId>s3</artifactId>
-            <version>2.24.12</version>
-        </dependency>
+        <!-- Supabase Storage uses REST API via Spring's RestTemplate — no extra dependency needed -->
 
         <!-- ── Lombok (optional but reduces boilerplate) ── -->
         <dependency>
