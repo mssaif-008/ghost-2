@@ -1,0 +1,120 @@
+.auth-page {
+  display: flex;
+  min-height: 100vh;
+}
+
+.auth-page__left {
+  flex: 0 0 40%;
+  background-color: var(--color-surface);
+  border-right: 1px solid var(--color-border);
+  display: flex;
+  align-items: center;
+  padding: 4rem;
+  overflow: hidden;
+  position: relative;
+}
+
+.auth-page__left::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(circle at top left, rgba(232, 213, 176, 0.05), transparent 60%);
+}
+
+.auth-page__quote {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: clamp(4rem, 8vw, 8rem);
+  line-height: 0.9;
+  font-weight: 700;
+  color: var(--color-border);
+  transform: translateX(-10%); /* Overhang slightly */
+  user-select: none;
+}
+
+.auth-page__right {
+  flex: 0 0 60%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 4rem 15%;
+}
+
+.auth-page__tabs {
+  display: flex;
+  gap: 2rem;
+  margin-bottom: 3rem;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.auth-page__tab {
+  font-family: var(--font-mono);
+  font-size: 1.125rem;
+  color: var(--color-muted);
+  padding-bottom: 1rem;
+  position: relative;
+  text-decoration: none;
+}
+
+.auth-page__tab:hover {
+  color: var(--color-text);
+}
+
+.auth-page__tab--active {
+  color: var(--color-primary);
+}
+
+.auth-page__tab--active::after {
+  content: "";
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background-color: var(--color-primary);
+}
+
+.auth-page__form {
+  max-width: 400px;
+}
+
+.auth-page__authenticating {
+  font-family: var(--font-mono);
+  color: var(--color-success);
+  margin-bottom: 1.5rem;
+  animation: pulse 2s infinite;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.auth-page__error {
+  color: var(--color-danger);
+  font-family: var(--font-mono);
+  font-size: 0.875rem;
+  margin-top: -0.5rem;
+  margin-bottom: 1rem;
+  border-left: 2px solid var(--color-danger);
+  padding-left: 1rem;
+}
+
+.terminal-cursor {
+  animation: blink 1s step-end infinite;
+}
+
+@media (max-width: 768px) {
+  .auth-page {
+    flex-direction: column;
+  }
+  .auth-page__left {
+    flex: none;
+    min-height: 30vh;
+  }
+  .auth-page__right {
+    flex: 1;
+    padding: 2rem;
+  }
+}

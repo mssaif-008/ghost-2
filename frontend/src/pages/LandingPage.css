@@ -1,0 +1,126 @@
+.landing {
+  display: flex;
+  flex-direction: column;
+}
+
+.landing__hero {
+  display: flex;
+  min-height: 80vh;
+  clip-path: polygon(0 0, 100% 0, 100% 85%, 0 100%);
+  background-color: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+  padding-bottom: 15vh;
+}
+
+.landing__hero-text {
+  flex: 0 0 60%;
+  padding: 15vh 10%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.landing__hero-text h1 {
+  line-height: 0.9;
+  margin-bottom: 2rem;
+  letter-spacing: -0.03em;
+}
+
+.landing__hero-text p {
+  font-size: 1.25rem;
+  color: var(--color-muted);
+  max-width: 600px;
+  margin-bottom: 3rem;
+}
+
+.landing__cta-group {
+  display: flex;
+  gap: 1.5rem;
+  align-items: center;
+}
+
+.landing__hero-ascii {
+  flex: 0 0 40%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-primary);
+  font-size: 1.25rem;
+  line-height: 1.2;
+}
+
+.landing__features {
+  padding: 10vh 10%;
+}
+
+.landing__features-grid {
+  display: grid;
+  grid-template-columns: 1fr 1.2fr 1fr; /* Asymmetric grid */
+  gap: 2rem;
+  margin-top: 4rem;
+}
+
+.feature-card {
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  padding: 2rem;
+  box-shadow: 4px 4px 0px #000;
+  transition: transform 150ms ease-out;
+}
+
+.feature-card:hover {
+  transform: translateY(-4px);
+  border-color: var(--color-primary);
+}
+
+.feature-card h3 {
+  font-family: var(--font-mono);
+  font-size: 1.25rem;
+  margin-bottom: 1rem;
+  color: var(--color-text);
+}
+
+.feature-card p {
+  color: var(--color-muted);
+}
+
+.landing__arch {
+  width: 100%;
+  background-color: #000;
+  padding: 8vh 10%;
+  border-top: 1px solid var(--color-border);
+  border-bottom: 1px solid var(--color-border);
+  margin-top: 5vh;
+}
+
+.landing__arch-flow {
+  font-family: var(--font-mono);
+  font-size: 1.5rem;
+  color: var(--color-muted);
+  text-align: center;
+  letter-spacing: 0.1em;
+}
+
+.landing__banner {
+  background-color: var(--color-primary);
+  color: #000;
+  padding: 15vh 10%;
+  text-align: center;
+  clip-path: polygon(0 15%, 100% 0, 100% 100%, 0 100%);
+  margin-top: -5vh;
+}
+
+.landing__banner h2 {
+  color: #000;
+  margin-bottom: 3rem;
+}
+
+.landing__banner .btn--primary {
+  background-color: #000;
+  color: var(--color-primary);
+  border-color: #000;
+}
+
+.landing__banner .btn--primary::before {
+  background-color: #222;
+}

@@ -1,0 +1,104 @@
+.new-deploy__content {
+  padding: 4rem 10%;
+  display: flex;
+  justify-content: center;
+}
+
+.new-deploy__form {
+  width: 100%;
+  max-width: 680px;
+  position: relative;
+}
+
+.new-deploy__section {
+  position: relative;
+  margin-bottom: 5rem;
+}
+
+/* Asymmetric large numbers positioned absolute left */
+.new-deploy__step-counter {
+  position: absolute;
+  left: -8rem;
+  top: -1.5rem;
+  font-family: var(--font-display);
+  font-size: clamp(4rem, 8vw, 6rem);
+  font-weight: 800;
+  color: var(--color-primary);
+  opacity: 0.07;
+  line-height: 1;
+  user-select: none;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.new-deploy__section-title {
+  position: relative;
+  z-index: 1;
+  margin-bottom: 2rem;
+  border-bottom: 1px solid var(--color-border);
+  padding-bottom: 0.5rem;
+}
+
+.custom-select-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.custom-select-wrapper::after {
+  content: "▼";
+  position: absolute;
+  right: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--color-primary);
+  pointer-events: none;
+  font-size: 0.875rem;
+}
+
+.custom-select {
+  appearance: none;
+  background-color: #0D0D0D;
+  border: 1px solid #2A2A2A;
+  color: var(--color-text);
+  font-family: var(--font-mono);
+  padding: 0.75rem 1rem;
+  font-size: 1rem;
+  width: 100%;
+  border-radius: 0;
+  transition: border-color 150ms ease-out;
+  cursor: pointer;
+}
+
+.custom-select:focus {
+  outline: none;
+  border-left: 3px solid var(--color-primary);
+  border-color: var(--color-primary);
+}
+
+.new-deploy__review-block {
+  background-color: #000;
+  border: 1px solid var(--color-border);
+  box-shadow: 4px 4px 0px #000;
+  padding: 2rem;
+  font-family: var(--font-mono);
+  font-size: 0.875rem;
+  color: var(--color-success);
+}
+
+.review-row {
+  display: flex;
+  margin-bottom: 0.5rem;
+}
+
+.review-label {
+  flex: 0 0 100px;
+  color: var(--color-primary);
+}
+
+.new-deploy__error {
+  margin-top: 1rem;
+  color: var(--color-danger);
+  border-left: 2px solid var(--color-danger);
+  padding-left: 1rem;
+  font-family: var(--font-mono);
+}
