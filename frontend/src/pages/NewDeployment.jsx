@@ -22,23 +22,23 @@ export const NewDeployment = () => {
     setFramework(val);
     switch (val) {
       case 'React':
-        setBuildCommand('npm run build');
+        setBuildCommand('npm install && npm run build');
         setOutputDir('dist');
         break;
       case 'Vue':
-        setBuildCommand('npm run build');
+        setBuildCommand('npm install && npm run build');
         setOutputDir('dist');
         break;
       case 'Angular':
-        setBuildCommand('npm run build');
+        setBuildCommand('npm install && npm run build');
         setOutputDir('dist');
         break;
       case 'SvelteKit':
-        setBuildCommand('npm run build');
+        setBuildCommand('npm install && npm run build');
         setOutputDir('build');
         break;
       case 'Next.js':
-        setBuildCommand('npm run build');
+        setBuildCommand('npm install && npm run build');
         setOutputDir('out');
         break;
       case 'Other':
@@ -59,7 +59,7 @@ export const NewDeployment = () => {
       const res = await createDeployment(deployData);
       navigate(`/deployments/${res.deploymentId}`);
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to create deployment');
+      setError(err.response?.data?.message || err.response?.data?.error || 'Failed to create deployment');
     } finally {
       setLoading(false);
     }

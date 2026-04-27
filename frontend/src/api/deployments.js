@@ -1,5 +1,10 @@
 import api from './axios';
 
+const getErrorMessage = (error, fallbackMessage) =>
+  error.response?.data?.message ||
+  error.response?.data?.error ||
+  fallbackMessage;
+
 export const getDeployments = async () => {
   const response = await api.get('/deploy');
   return response.data;
@@ -21,6 +26,13 @@ export const deleteDeployment = async (id) => {
 };
 
 export const getDeploymentJobs = async (id) => {
-  const response = await api.get(`/logs/${id}`);
-  return response.data;
+  try {
+    const response = await api.get(`/logs/${id}`);
+    return response.data;
+  } catch (error) {
+    if (error.response?.status === 404) {
+      return { deploymentId: id, steps: [] };
+    }
+    throw new Error(getErrorMessage(error, 'Failed to fetch deployment logs'));
+  }
 };

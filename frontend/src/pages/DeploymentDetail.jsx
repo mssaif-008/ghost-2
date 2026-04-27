@@ -22,18 +22,10 @@ export const DeploymentDetail = () => {
         const deployData = await getDeployment(id);
         if (!mounted) return;
         setDeployment(deployData);
-        
-        try {
-          const jobsData = await getDeploymentJobs(id);
-          if (!mounted) return;
-          setJobs(jobsData.steps || []);
-        } catch (jobErr) {
-          if (jobErr.response?.status === 404) {
-            setJobs([]); // No logs yet, wait for worker
-          } else {
-            throw jobErr;
-          }
-        }
+
+        const jobsData = await getDeploymentJobs(deployData.deploymentId || id);
+        if (!mounted) return;
+        setJobs(jobsData.steps || []);
 
         const isLiveOrFailed = ['LIVE', 'FAILED'].includes(deployData.status);
         if (!isLiveOrFailed) {
@@ -42,7 +34,7 @@ export const DeploymentDetail = () => {
       } catch (err) {
         if (!mounted) return;
         if (err.response?.status !== 401) {
-          setError(err.response?.data?.message || 'Failed to fetch deployment details');
+          setError(err.response?.data?.message || err.response?.data?.error || err.message || 'Failed to fetch deployment details');
         }
       }
     };
@@ -87,7 +79,7 @@ export const DeploymentDetail = () => {
        <main className="detail-page__content">
          <header className="detail-page__header">
             <Link to="/dashboard" className="detail-page__back">← Back</Link>
-            <h1 className="detail-page__title">Deployment {deployment.deploymentId.substring(0, 8)}</h1>
+            <h1 className="detail-page__title">Deployment {(deployment.deploymentId || id).substring(0, 8)}</h1>
          </header>
 
          <section className="detail-page__metadata">
@@ -128,9 +120,9 @@ export const DeploymentDetail = () => {
             >
               {jobs.map((job) => (
                 <BuildStepLog 
-                  key={job.id}
+                  key={job.id ?? `${job.step}-${job.startedAt}`}
                   step={job.step}
-                  logOutput={job.logOutput}
+                  logOutput={job.logOutput ?? job.log}
                   startedAt={job.startedAt}
                   finishedAt={job.finishedAt}
                 />

@@ -1,1 +1,109 @@
+# ============================================
+# Ghost Project — .gitignore
+# ============================================
+
+# ── Environment & Secrets ────────────────────
 .env
+.env.local
+.env.*.local
+*.pem
+*.key
+*.p12
+*.jks
+*.gpg
+
+# ── Java / Maven (api/) ─────────────────────
+api/target/
+api/*.jar
+api/*.war
+api/*.zip
+api/*.tar.gz
+api/*.rar
+api/src/main/resources/application-local.properties
+api/.mvn/wrapper/maven-wrapper.jar
+api/.flattened-pom.xml
+api/dependency-reduced-pom.xml
+api/.factorypath
+
+# Maven build outputs
+target/
+*.class
+
+# ── React / Vite (frontend/) ────────────────
+frontend/node_modules/
+frontend/dist/
+frontend/dist-ssr/
+frontend/.cache/
+frontend/*.local
+frontend/.eslintcache
+frontend/coverage/
+
+# Node.js General
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# ── Docker ──────────────────────────────────
+docker/data/
+docker/*.log
+*.pid
+*.seed
+*.pid.lock
+
+# ── IDE / Editor ────────────────────────────
+# IntelliJ IDEA
+.idea/
+*.iml
+*.iws
+*.ipr
+out/
+cmake-build-*/
+
+# VS Code
+.vscode/
+!.vscode/extensions.json
+!.vscode/launch.json
+!.vscode/settings.json
+*.code-workspace
+
+# Eclipse
+.classpath
+.project
+.settings/
+bin/
+.factorypath
+
+# ── OS Files ────────────────────────────────
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# Linux
+*~
+.directory
+
+# ── Logs ────────────────────────────────────
+*.log
+logs/
+*.out
+
+# ── Build / Temp ────────────────────────────
+*.tmp
+*.bak
+*.swp
+*.swo
+.DS_Store
+.cache/
+temp/
+tmp/
+

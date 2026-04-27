@@ -55,7 +55,7 @@ public class DeployService {
         deployment.setBuildCommand(request.getBuildCommand());
         deployment.setOutputDir(request.getOutputDir());
         deployment.setStatus("QUEUED");
-        deployment.setSiteUrl(deploymentId + "." + baseDomain);
+        deployment.setSiteUrl(buildSiteUrl(deploymentId));
 
         // 3. Save to database
         deployment = deploymentRepository.save(deployment);
@@ -84,6 +84,22 @@ public class DeployService {
         return toResponse(deployment);
     }
 
+    public java.util.List<DeployResponse> getAllDeployments(Long userId) {
+        return deploymentRepository.findByUserIdOrderByCreatedAtDesc(userId)
+                .stream()
+                .map(this::toResponse)
+                .toList();
+    }
+
+    public void deleteDeployment(String deploymentId, Long userId) {
+        Deployment deployment = deploymentRepository.findById(deploymentId)
+                .orElseThrow(() -> new IllegalArgumentException("Deployment not found: " + deploymentId));
+        if (!deployment.getUserId().equals(userId)) {
+            throw new IllegalArgumentException("Unauthorized to delete this deployment");
+        }
+        deploymentRepository.delete(deployment);
+    }
+
     /**
      * Convert entity to response DTO.
      */
@@ -99,5 +115,18 @@ public class DeployService {
         response.setCreatedAt(d.getCreatedAt());
         response.setUpdatedAt(d.getUpdatedAt());
         return response;
+    }
+
+    private String buildSiteUrl(String deploymentId) {
+        String normalizedBaseDomain = baseDomain == null ? "localhost" : baseDomain.trim();
+        if (normalizedBaseDomain.startsWith("http://")) {
+            return "http://" + deploymentId + "."
+                    + normalizedBaseDomain.substring("http://".length());
+        }
+        if (normalizedBaseDomain.startsWith("https://")) {
+            return "https://" + deploymentId + "."
+                    + normalizedBaseDomain.substring("https://".length());
+        }
+        return "http://" + deploymentId + "." + normalizedBaseDomain;
     }
 }

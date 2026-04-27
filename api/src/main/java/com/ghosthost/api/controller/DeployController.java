@@ -4,6 +4,7 @@ import com.ghosthost.api.dto.DeployRequest;
 import com.ghosthost.api.dto.DeployResponse;
 import com.ghosthost.api.entity.BuildJob;
 import com.ghosthost.api.repository.BuildJobRepository;
+import com.ghosthost.api.repository.DeploymentRepository;
 import com.ghosthost.api.service.DeployService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -31,11 +32,14 @@ public class DeployController {
 
     private final DeployService deployService;
     private final BuildJobRepository buildJobRepository;
+    private final DeploymentRepository deploymentRepository;
 
     public DeployController(DeployService deployService,
-            BuildJobRepository buildJobRepository) {
+            BuildJobRepository buildJobRepository,
+            DeploymentRepository deploymentRepository) {
         this.deployService = deployService;
         this.buildJobRepository = buildJobRepository;
+        this.deploymentRepository = deploymentRepository;
     }
 
     /**
@@ -79,6 +83,23 @@ public class DeployController {
         }
     }
 
+    @GetMapping("/deploy")
+    public ResponseEntity<List<DeployResponse>> getAllDeployments(Authentication auth) {
+        Long userId = (Long) auth.getPrincipal();
+        return ResponseEntity.ok(deployService.getAllDeployments(userId));
+    }
+
+    @DeleteMapping("/deploy/{id}")
+    public ResponseEntity<?> deleteDeployment(@PathVariable String id, Authentication auth) {
+        try {
+            Long userId = (Long) auth.getPrincipal();
+            deployService.deleteDeployment(id, userId);
+            return ResponseEntity.noContent().build();
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", e.getMessage()));
+        }
+    }
+
     /**
      * Get build logs for a deployment.
      *
@@ -94,16 +115,23 @@ public class DeployController {
                 .findByDeploymentIdOrderByStartedAtAsc(deploymentId);
 
         if (jobs.isEmpty()) {
+            if (deploymentRepository.existsById(deploymentId)) {
+                return ResponseEntity.ok(Map.of(
+                        "deploymentId", deploymentId,
+                        "steps", List.of()));
+            }
             return ResponseEntity
                     .status(HttpStatus.NOT_FOUND)
-                    .body(Map.of("error", "No logs found for deployment: " + deploymentId));
+                    .body(Map.of("error", "Deployment not found: " + deploymentId));
         }
 
         // Build the response
         List<Map<String, Object>> steps = jobs.stream().map(job -> Map.<String, Object>of(
+                "id", job.getId(),
                 "step", job.getStep(),
                 "status", job.getStatus(),
                 "log", job.getLogOutput() != null ? job.getLogOutput() : "",
+                "logOutput", job.getLogOutput() != null ? job.getLogOutput() : "",
                 "startedAt", job.getStartedAt().toString(),
                 "finishedAt", job.getFinishedAt() != null ? job.getFinishedAt().toString() : "")).toList();
 

@@ -203,12 +203,17 @@ public class DockerBuildExecutor {
                     "git clone --depth 1 " + repoUrl + " /workspace/repo 2>&1",
                     "echo '=== BUILD ==='",
                     "cd /workspace/repo",
+                    "export CI=true",
+                    "export NODE_ENV=production",
                     "export PUBLIC_URL=/",
                     "export BASE_URL=/",
                     "export GENERATE_SOURCEMAP=false",
                     buildCommand + " 2>&1",
                     "echo '=== EXTRACT ==='",
-                    "cp -r " + outputDir + "/* /output/ 2>&1",
+                    "if [ ! -e " + outputDir + " ]; then echo \"Output path not found: " + outputDir
+                            + "\"; echo \"Repository root:\"; pwd; echo \"Top-level files:\"; ls -la; exit 1; fi",
+                    "if [ -d " + outputDir + " ]; then cp -a " + outputDir
+                            + "/. /output/ 2>&1; else cp -a " + outputDir + " /output/ 2>&1; fi",
                     "echo '=== DONE ==='");
 
             // Docker run with bind mount
@@ -273,6 +278,12 @@ public class DockerBuildExecutor {
                 return new BuildResult(false, fullLog.toString(), null);
             }
 
+            String staticValidationError = validateStaticOutput(hostOutputDir, outputDir);
+            if (staticValidationError != null) {
+                fullLog.append("\n>>> ERROR: ").append(staticValidationError).append("\n");
+                return new BuildResult(false, fullLog.toString(), null);
+            }
+
             fullLog.append("\n>>> SUCCESS: Build artifacts ready at ").append(hostOutputDir).append("\n");
             return new BuildResult(true, fullLog.toString(), hostOutputDir);
 
@@ -326,6 +337,27 @@ public class DockerBuildExecutor {
         try (var entries = Files.list(dir)) {
             return entries.findFirst().isEmpty();
         }
+    }
+
+    private String validateStaticOutput(Path outputPath, String outputDir) throws IOException {
+        Path indexHtml = outputPath.resolve("index.html");
+        if (Files.exists(indexHtml)) {
+            return null;
+        }
+
+        String normalizedOutputDir = outputDir == null ? "" : outputDir.trim().replace("\\", "/");
+        if (".next".equals(normalizedOutputDir) || normalizedOutputDir.endsWith("/.next")) {
+            return "Next.js outputDir '.next' is not a static site bundle. This platform serves static files from storage, so use `next export`/`output: 'export'` and deploy the `out` directory instead.";
+        }
+
+        boolean hasNextArtifacts = Files.exists(outputPath.resolve("BUILD_ID"))
+                || Files.exists(outputPath.resolve("server"))
+                || Files.exists(outputPath.resolve("static"));
+        if (hasNextArtifacts) {
+            return "Build output looks like a Next.js server bundle without an index.html. Static hosting via Nginx + Supabase needs an exported site directory such as `out`.";
+        }
+
+        return "Build completed, but no index.html was found in the uploaded artifact root. Static deployments need an entry file at the root of outputDir.";
     }
 
     /**
