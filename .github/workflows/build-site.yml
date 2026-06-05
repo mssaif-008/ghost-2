@@ -1,0 +1,62 @@
+name: Build User Site
+
+on:
+  repository_dispatch:
+    types: [build-site]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    
+    steps:
+      - name: Clone User Repository
+        run: git clone ${{ github.event.client_payload.repo_url }} site
+
+      - name: Extract and Build
+        run: |
+          cd site
+          ${{ github.event.client_payload.build_command }}
+
+      - name: Upload to Supabase Storage
+        run: |
+          DEPLOY_ID="${{ github.event.client_payload.deployment_id }}"
+          OUTPUT_DIR="${{ github.event.client_payload.output_dir }}"
+          
+          # Default output dir if empty
+          if [ -z "$OUTPUT_DIR" ]; then
+            OUTPUT_DIR="."
+          fi
+          
+          find site/$OUTPUT_DIR -type f | while read file; do
+            # Get path relative to the output dir
+            REL_PATH="${file#site/$OUTPUT_DIR/}"
+            # Remove leading slash if any
+            REL_PATH="${REL_PATH#/}"
+            
+            MIME=$(file --mime-type -b "$file")
+            
+            # Use --retry to handle transient network issues
+            curl --retry 3 -X POST \
+              "${{ secrets.SUPABASE_URL }}/storage/v1/object/${{ secrets.SUPABASE_BUCKET }}/deployments/${DEPLOY_ID}/${REL_PATH}" \
+              -H "Authorization: Bearer ${{ secrets.SUPABASE_SERVICE_KEY }}" \
+              -H "Content-Type: ${MIME}" \
+              --data-binary @"$file"
+          done
+
+      - name: Notify API — Build Complete
+        run: |
+          curl -X PATCH \
+            "${{ github.event.client_payload.callback_url }}" \
+            -H "Content-Type: application/json" \
+            -H "Authorization: Bearer ${{ secrets.INTERNAL_API_KEY }}" \
+            -d '{"status": "LIVE"}'
+
+      - name: Notify API — Build Failed
+        if: failure()
+        run: |
+          curl -X PATCH \
+            "${{ github.event.client_payload.callback_url }}" \
+            -H "Content-Type: application/json" \
+            -H "Authorization: Bearer ${{ secrets.INTERNAL_API_KEY }}" \
+            -d '{"status": "FAILED", "error": "Build failed on GitHub Actions"}'

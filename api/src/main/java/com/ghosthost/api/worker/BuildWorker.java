@@ -5,39 +5,29 @@ import com.ghosthost.api.entity.Deployment;
 import com.ghosthost.api.repository.BuildJobRepository;
 import com.ghosthost.api.repository.DeploymentRepository;
 import com.ghosthost.api.service.QueueService;
-import com.ghosthost.api.service.SupabaseStorageService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
+import org.springframework.web.client.RestTemplate;
 
 import java.time.LocalDateTime;
+import java.util.Map;
 
 /**
  * BuildWorker — polls the in-memory queue and orchestrates builds.
  *
- * HOW IT WORKS:
+ * HOW IT WORKS NOW (GitHub Actions Integration):
  * 1. Every 2 seconds, we poll the queue for a new deployment ID
- * 2. If we get one, we run the full build pipeline:
- * a. Look up the deployment in the database
- * b. Update status to BUILDING
- * c. Run Docker build (clone → install → build → extract)
- * d. Update status to UPLOADING
- * e. Upload build output to Supabase Storage
- * f. Update status to LIVE
- * g. Clean up temp files and container
- * 3. If any step fails, we set status to FAILED and log the error
- *
- * WHY @Scheduled INSTEAD OF A DEDICATED THREAD?
- * For MVP, @Scheduled is the simplest approach.
- * It runs in a Spring-managed thread pool.
- * The fixedDelay=2000 means "wait 2 seconds AFTER the last execution finished"
- * (not every 2 seconds), so builds won't overlap.
- *
- * WHAT HAPPENS IF THE SERVER RESTARTS?
- * In-memory queue is lost. All QUEUED/BUILDING deployments become stuck.
- * This is a known MVP limitation. With Redis + a recovery job, you'd
- * re-enqueue any stuck deployments on startup.
+ * 2. If we get one, we look up the deployment in the database
+ * 3. We update status to BUILDING
+ * 4. We trigger a GitHub Actions workflow via the Repository Dispatch API
+ * 5. We stop processing locally. The GHA workflow will update the status
+ *    to LIVE or FAILED via the internal callback API.
  */
 @Component
 public class BuildWorker {
@@ -47,19 +37,24 @@ public class BuildWorker {
     private final QueueService queueService;
     private final DeploymentRepository deploymentRepository;
     private final BuildJobRepository buildJobRepository;
-    private final DockerBuildExecutor dockerBuildExecutor;
-    private final SupabaseStorageService supabaseStorageService;
+    private final RestTemplate restTemplate;
+
+    @Value("${github.pat}")
+    private String githubPat;
+
+    @Value("${github.repo}")
+    private String githubRepo;
+
+    @Value("${app.api-url}")
+    private String apiUrl;
 
     public BuildWorker(QueueService queueService,
             DeploymentRepository deploymentRepository,
-            BuildJobRepository buildJobRepository,
-            DockerBuildExecutor dockerBuildExecutor,
-            SupabaseStorageService supabaseStorageService) {
+            BuildJobRepository buildJobRepository) {
         this.queueService = queueService;
         this.deploymentRepository = deploymentRepository;
         this.buildJobRepository = buildJobRepository;
-        this.dockerBuildExecutor = dockerBuildExecutor;
-        this.supabaseStorageService = supabaseStorageService;
+        this.restTemplate = new RestTemplate();
     }
 
     /**
@@ -87,7 +82,7 @@ public class BuildWorker {
     }
 
     /**
-     * Process a single deployment through the full pipeline.
+     * Process a single deployment by triggering GitHub Actions.
      */
     private void processDeployment(String deploymentId) {
         // 1. Look up the deployment
@@ -103,63 +98,59 @@ public class BuildWorker {
         deployment.setStatus("BUILDING");
         deploymentRepository.save(deployment);
 
-        BuildJob buildLog = logStep(deploymentId, "BUILD", "RUNNING", "Starting build...");
-
-        // Run the Docker build
-        DockerBuildExecutor.BuildResult result = dockerBuildExecutor
-                .executeBuildWithMount(
-                        deploymentId,
-                        deployment.getRepoUrl(),
-                        deployment.getBuildCommand(),
-                        deployment.getOutputDir());
-
-        // Update build log
-        buildLog.setLogOutput(result.logs());
-        buildLog.setFinishedAt(LocalDateTime.now());
-
-        if (!result.success()) {
-            buildLog.setStatus("FAILED");
-            buildJobRepository.save(buildLog);
-            failDeployment(deploymentId, "Build failed. See logs for details.");
-            return;
-        }
-
-        buildLog.setStatus("SUCCESS");
-        buildJobRepository.save(buildLog);
-
-        // ── Step: UPLOADING ─────────────────────────────
-        deployment.setStatus("UPLOADING");
-        deploymentRepository.save(deployment);
-
-        BuildJob uploadLog = logStep(deploymentId, "UPLOAD", "RUNNING", "Uploading to Supabase...");
+        BuildJob buildLog = logStep(deploymentId, "DISPATCH", "RUNNING", "Triggering GitHub Actions build...");
 
         try {
-            int fileCount = supabaseStorageService.uploadDirectory(
-                    result.outputPath(), deploymentId);
+            // Trigger GitHub Action
+            triggerGitHubAction(deployment);
 
-            uploadLog.setLogOutput("Uploaded " + fileCount + " files to Supabase");
-            uploadLog.setStatus("SUCCESS");
-            uploadLog.setFinishedAt(LocalDateTime.now());
-            buildJobRepository.save(uploadLog);
+            buildLog.setLogOutput("Successfully triggered GitHub Actions workflow.");
+            buildLog.setStatus("SUCCESS");
+            buildLog.setFinishedAt(LocalDateTime.now());
+            buildJobRepository.save(buildLog);
 
+            log.info("[{}] Triggered GitHub Actions build.", deploymentId);
+            
+            // Note: We don't change state to LIVE here. The GitHub Action will do it.
         } catch (Exception e) {
-            log.error("[{}] Upload failed: {}", deploymentId, e.getMessage(), e);
-            uploadLog.setLogOutput("Upload error: " + e.getMessage());
-            uploadLog.setStatus("FAILED");
-            uploadLog.setFinishedAt(LocalDateTime.now());
-            buildJobRepository.save(uploadLog);
-            failDeployment(deploymentId, "Upload failed: " + e.getMessage());
-            return;
+            log.error("[{}] Failed to trigger GitHub Actions: {}", deploymentId, e.getMessage(), e);
+            buildLog.setLogOutput("Failed to trigger GitHub Actions: " + e.getMessage());
+            buildLog.setStatus("FAILED");
+            buildLog.setFinishedAt(LocalDateTime.now());
+            buildJobRepository.save(buildLog);
+            
+            failDeployment(deploymentId, "Failed to start build on GitHub Actions.");
         }
+    }
 
-        // ── Step: LIVE ──────────────────────────────────
-        deployment.setStatus("LIVE");
-        deploymentRepository.save(deployment);
-        log.info("[{}] 🎉 Deployment is LIVE at: {}", deploymentId, deployment.getSiteUrl());
+    private void triggerGitHubAction(Deployment deployment) {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setBearerAuth(githubPat);
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.set("Accept", "application/vnd.github+json");
+        headers.set("X-GitHub-Api-Version", "2022-11-28");
 
-        // ── Cleanup ─────────────────────────────────────
-        dockerBuildExecutor.cleanup(result.outputPath());
-        logStep(deploymentId, "CLEANUP", "SUCCESS", "Cleaned up build artifacts");
+        String callbackUrl = apiUrl + "/api/internal/deployments/" + deployment.getId() + "/status";
+
+        Map<String, Object> payload = Map.of(
+                "deployment_id", deployment.getId(),
+                "repo_url", deployment.getRepoUrl() != null ? deployment.getRepoUrl() : "",
+                "build_command", deployment.getBuildCommand() != null ? deployment.getBuildCommand() : "",
+                "output_dir", deployment.getOutputDir() != null ? deployment.getOutputDir() : "",
+                "callback_url", callbackUrl
+        );
+
+        Map<String, Object> body = Map.of(
+                "event_type", "build-site",
+                "client_payload", payload
+        );
+
+        HttpEntity<Map<String, Object>> entity = new HttpEntity<>(body, headers);
+
+        String dispatchUrl = "https://api.github.com/repos/" + githubRepo + "/dispatches";
+        
+        log.info("Sending repository_dispatch to {}", dispatchUrl);
+        restTemplate.postForEntity(dispatchUrl, entity, Void.class);
     }
 
     /**
@@ -183,3 +174,4 @@ public class BuildWorker {
         return buildJobRepository.save(job);
     }
 }
+

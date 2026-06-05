@@ -30,21 +30,14 @@ FROM eclipse-temurin:17-jre-alpine
 
 WORKDIR /app
 
-# Install Docker CLI so the worker can create build containers
-# This is needed because the worker calls `docker run` to build user sites
-RUN apk add --no-cache docker-cli
-
+# (Docker CLI is no longer needed since builds are offloaded to GitHub Actions)
 # Copy the built JAR from stage 1
 COPY --from=build /app/target/*.jar app.jar
 
 # Create temp directory for build artifacts
 RUN mkdir -p /tmp/ghosthost-builds
 
-# NOTE: Running as root for MVP because:
-# 1. The bind mount (/tmp/ghosthost-builds) inherits host permissions
-# 2. Docker socket access requires elevated privileges
-# 3. The container itself provides isolation
-# In production, use a proper init system to fix permissions at runtime
+# NOTE: In production, use a proper init system to fix permissions at runtime
 
 EXPOSE 8081
 

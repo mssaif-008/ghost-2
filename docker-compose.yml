@@ -51,32 +51,28 @@ services:
       SUPABASE_SERVICE_KEY: ${SUPABASE_SERVICE_KEY}
       SUPABASE_BUCKET: ${SUPABASE_BUCKET}
       BASE_DOMAIN: ${BASE_DOMAIN}
-      DOCKER_MEMORY_LIMIT: ${DOCKER_MEMORY_LIMIT}
-      DOCKER_CPU_LIMIT: ${DOCKER_CPU_LIMIT}
-      BUILD_TIMEOUT_SECONDS: ${BUILD_TIMEOUT_SECONDS}
-    volumes:
-      # Mount Docker socket so the worker can create build containers
-      - /var/run/docker.sock:/var/run/docker.sock
-      # Temp directory for extracted build artifacts
-      - /tmp/ghosthost-builds:/tmp/ghosthost-builds
+      GITHUB_PAT: ${GITHUB_PAT}
+      GITHUB_REPO: ${GITHUB_REPO}
+      INTERNAL_API_KEY: ${INTERNAL_API_KEY}
+      API_URL: ${API_URL}
   # ── Nginx Reverse Proxy ─────────────────────
-nginx:
-  build:
-    context: ./nginx
-    dockerfile: Dockerfile
-  container_name: ghosthost-nginx
-  restart: unless-stopped
-  ports:
-    - "80:80"
-    - "443:443"
-  environment:
-    SUPABASE_URL: ${SUPABASE_URL}
-    SUPABASE_SERVICE_KEY: ${SUPABASE_SERVICE_KEY}
-    SUPABASE_BUCKET: ${SUPABASE_BUCKET}
-    BASE_DOMAIN: ${BASE_DOMAIN}
-    NGINX_ENVSUBST_TEMPLATE_VARS: SUPABASE_URL,SUPABASE_SERVICE_KEY,SUPABASE_BUCKET,BASE_DOMAIN
-  depends_on:
-    - api
+  nginx:
+    build:
+      context: ./nginx
+      dockerfile: Dockerfile
+    container_name: ghosthost-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      SUPABASE_URL: ${SUPABASE_URL}
+      SUPABASE_SERVICE_KEY: ${SUPABASE_SERVICE_KEY}
+      SUPABASE_BUCKET: ${SUPABASE_BUCKET}
+      BASE_DOMAIN: ${BASE_DOMAIN}
+      NGINX_ENVSUBST_TEMPLATE_VARS: SUPABASE_URL,SUPABASE_SERVICE_KEY,SUPABASE_BUCKET,BASE_DOMAIN
+    depends_on:
+      - api
 
 volumes:
   pgdata:

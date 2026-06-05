@@ -6,6 +6,7 @@ D:\ghost project\ghost\api\src\main\java\com\ghosthost\api\service\DeployService
 D:\ghost project\ghost\api\src\main\java\com\ghosthost\api\repository\UserRepository.java
 D:\ghost project\ghost\api\src\main\java\com\ghosthost\api\security\JwtAuthFilter.java
 D:\ghost project\ghost\api\src\main\java\com\ghosthost\api\repository\BuildJobRepository.java
+D:\ghost project\ghost\api\src\main\java\com\ghosthost\api\controller\InternalDeployController.java
 D:\ghost project\ghost\api\src\main\java\com\ghosthost\api\entity\BuildJob.java
 D:\ghost project\ghost\api\src\main\java\com\ghosthost\api\controller\AuthController.java
 D:\ghost project\ghost\api\src\main\java\com\ghosthost\api\controller\DeployController.java
@@ -17,6 +18,5 @@ D:\ghost project\ghost\api\src\main\java\com\ghosthost\api\worker\BuildWorker.ja
 D:\ghost project\ghost\api\src\main\java\com\ghosthost\api\security\JwtUtil.java
 D:\ghost project\ghost\api\src\main\java\com\ghosthost\api\service\SupabaseStorageService.java
 D:\ghost project\ghost\api\src\main\java\com\ghosthost\api\entity\Deployment.java
-D:\ghost project\ghost\api\src\main\java\com\ghosthost\api\worker\DockerBuildExecutor.java
 D:\ghost project\ghost\api\src\main\java\com\ghosthost\api\repository\DeploymentRepository.java
 D:\ghost project\ghost\api\src\main\java\com\ghosthost\api\service\AuthService.java

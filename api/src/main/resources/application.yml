@@ -42,13 +42,12 @@ supabase:
   service-key: ${SUPABASE_SERVICE_KEY:}
   bucket: ${SUPABASE_BUCKET:ghosthost-deployments}
 
-# ── Domain ─────────────────────────────────
+# ── GitHub Actions Build Config ─────────────
+github:
+  pat: ${GITHUB_PAT:}
+  repo: ${GITHUB_REPO:}
+
 app:
   base-domain: ${BASE_DOMAIN:localhost}
-
-# ── Docker Build Config ───────────────────
-docker:
-  memory-limit: ${DOCKER_MEMORY_LIMIT:512m}
-  cpu-limit: ${DOCKER_CPU_LIMIT:1}
-  build-timeout-seconds: ${BUILD_TIMEOUT_SECONDS:300}
-  builder-image: ghosthost-builder
+  internal-api-key: ${INTERNAL_API_KEY:default-internal-secret}
+  api-url: ${API_URL:http://localhost:8081}
