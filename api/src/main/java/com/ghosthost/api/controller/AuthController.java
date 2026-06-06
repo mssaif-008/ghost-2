@@ -41,7 +41,9 @@ public class AuthController {
             String token = authService.register(request);
             return ResponseEntity
                     .status(HttpStatus.CREATED)
-                    .body(Map.of("token", token));
+                    .body(Map.of(
+                            "token", token,
+                            "email", request.getEmail()));
         } catch (IllegalArgumentException e) {
             return ResponseEntity
                     .status(HttpStatus.CONFLICT)
@@ -60,7 +62,9 @@ public class AuthController {
     public ResponseEntity<?> login(@Valid @RequestBody AuthRequest request) {
         try {
             String token = authService.login(request);
-            return ResponseEntity.ok(Map.of("token", token));
+            return ResponseEntity.ok(Map.of(
+                    "token", token,
+                    "email", request.getEmail()));
         } catch (IllegalArgumentException e) {
             return ResponseEntity
                     .status(HttpStatus.UNAUTHORIZED)
