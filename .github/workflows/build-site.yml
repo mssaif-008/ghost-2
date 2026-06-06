@@ -8,7 +8,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    
+
     steps:
       - name: Clone User Repository
         run: git clone ${{ github.event.client_payload.repo_url }} site
@@ -16,18 +16,19 @@ jobs:
       - name: Extract and Build
         run: |
           cd site
+          npm install
           ${{ github.event.client_payload.build_command }}
 
       - name: Upload to Supabase Storage
         run: |
           DEPLOY_ID="${{ github.event.client_payload.deployment_id }}"
           OUTPUT_DIR="${{ github.event.client_payload.output_dir }}"
-          
+
           # Default output dir if empty
           if [ -z "$OUTPUT_DIR" ]; then
             OUTPUT_DIR="."
           fi
-          
+
           find site/$OUTPUT_DIR -type f | while read file; do
             # Get path relative to the output dir
             REL_PATH="${file#site/$OUTPUT_DIR/}"
@@ -46,7 +47,7 @@ jobs:
 
       - name: Notify API — Build Complete
         run: |
-          curl -X PATCH \
+          curl --fail-with-body -X PATCH \
             "${{ github.event.client_payload.callback_url }}" \
             -H "Content-Type: application/json" \
             -H "Authorization: Bearer ${{ secrets.INTERNAL_API_KEY }}" \
@@ -55,7 +56,7 @@ jobs:
       - name: Notify API — Build Failed
         if: failure()
         run: |
-          curl -X PATCH \
+          curl --fail-with-body -X PATCH \
             "${{ github.event.client_payload.callback_url }}" \
             -H "Content-Type: application/json" \
             -H "Authorization: Bearer ${{ secrets.INTERNAL_API_KEY }}" \

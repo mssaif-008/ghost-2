@@ -29,8 +29,8 @@ public class DeployService {
     private final DeploymentRepository deploymentRepository;
     private final QueueService queueService;
 
-    @Value("${app.base-domain}")
-    private String baseDomain;
+    @Value("${app.api-url}")
+    private String apiUrl;
 
     public DeployService(DeploymentRepository deploymentRepository,
             QueueService queueService) {
@@ -42,8 +42,8 @@ public class DeployService {
      * Create a new deployment and enqueue it for building.
      */
     public DeployResponse createDeployment(DeployRequest request, Long userId) {
-        // 1. Generate a unique deployment ID (also used as subdomain)
-        // Using first 8 chars of UUID for shorter subdomains
+        // 1. Generate a unique deployment ID for the public /sites/{id}/ path
+        // Using first 8 chars of UUID for shorter URLs
         String fullUuid = UUID.randomUUID().toString();
         String deploymentId = fullUuid.substring(0, 8);
 
@@ -118,15 +118,10 @@ public class DeployService {
     }
 
     private String buildSiteUrl(String deploymentId) {
-        String normalizedBaseDomain = baseDomain == null ? "localhost" : baseDomain.trim();
-        if (normalizedBaseDomain.startsWith("http://")) {
-            return "http://" + deploymentId + "."
-                    + normalizedBaseDomain.substring("http://".length());
-        }
-        if (normalizedBaseDomain.startsWith("https://")) {
-            return "https://" + deploymentId + "."
-                    + normalizedBaseDomain.substring("https://".length());
-        }
-        return "http://" + deploymentId + "." + normalizedBaseDomain;
+        String normalizedApiUrl = apiUrl == null || apiUrl.isBlank()
+                ? "http://localhost:8081"
+                : apiUrl.trim();
+        normalizedApiUrl = normalizedApiUrl.replaceAll("/+$", "");
+        return normalizedApiUrl + "/sites/" + deploymentId + "/";
     }
 }

@@ -15,6 +15,7 @@ D:\ghost project\ghost\api\src\main\java\com\ghosthost\api\entity\User.java
 D:\ghost project\ghost\api\src\main\java\com\ghosthost\api\GhostHostApplication.java
 D:\ghost project\ghost\api\src\main\java\com\ghosthost\api\dto\DeployRequest.java
 D:\ghost project\ghost\api\src\main\java\com\ghosthost\api\worker\BuildWorker.java
+D:\ghost project\ghost\api\src\main\java\com\ghosthost\api\controller\SiteController.java
 D:\ghost project\ghost\api\src\main\java\com\ghosthost\api\security\JwtUtil.java
 D:\ghost project\ghost\api\src\main\java\com\ghosthost\api\service\SupabaseStorageService.java
 D:\ghost project\ghost\api\src\main\java\com\ghosthost\api\entity\Deployment.java
