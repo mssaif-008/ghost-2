@@ -51,6 +51,10 @@ public class SecurityConfig {
                 .requestMatchers("/auth/**").permitAll()
                 // Health check
                 .requestMatchers("/health").permitAll()
+                // GitHub Actions callbacks use app.internal-api-key in the controller
+                .requestMatchers("/api/internal/**").permitAll()
+                // Public deployed sites are served through the API on free hosting
+                .requestMatchers("/sites/**").permitAll()
                 // Everything else requires authentication
                 .anyRequest().authenticated()
             )

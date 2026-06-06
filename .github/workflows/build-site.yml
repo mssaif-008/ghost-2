@@ -46,7 +46,7 @@ jobs:
 
       - name: Notify API — Build Complete
         run: |
-          curl -X PATCH \
+          curl --fail-with-body -X PATCH \
             "${{ github.event.client_payload.callback_url }}" \
             -H "Content-Type: application/json" \
             -H "Authorization: Bearer ${{ secrets.INTERNAL_API_KEY }}" \
@@ -55,7 +55,7 @@ jobs:
       - name: Notify API — Build Failed
         if: failure()
         run: |
-          curl -X PATCH \
+          curl --fail-with-body -X PATCH \
             "${{ github.event.client_payload.callback_url }}" \
             -H "Content-Type: application/json" \
             -H "Authorization: Bearer ${{ secrets.INTERNAL_API_KEY }}" \
